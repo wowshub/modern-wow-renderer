@@ -7,6 +7,12 @@ namespace renderer::actorlight {
 inline float Blend(float current,float target,float dt,float seconds) { return current+(target-current)*(1.f-std::exp(-std::max(0.f,dt)/std::max(.01f,seconds))); }
 inline float Environment(float daylight,bool indoors,float day,float night,float interior) { return indoors?interior:night+(day-night)*std::clamp(daylight,0.f,1.f); }
 inline float Strength(float radius,float intensity) { return radius*radius*intensity; }
+// Works for both production Settings and test fixtures; missing mapping falls back.
+template<class Id,class Mapping,class Profiles,class Settings>
+const Settings& ResolveProfile(Id id,const Mapping& mapping,const Profiles& profiles,const Settings& fallback) {
+ auto m=mapping.find(id);if(m==mapping.end())return fallback;
+ auto p=profiles.find(m->second);return p==profiles.end()?fallback:p->second;
+}
 struct EquipmentLight { float radius, intensity; };
 struct EquipmentResult { size_t strongest=0; float radius=0; size_t count=0; };
 inline EquipmentResult Combine(const std::vector<EquipmentLight>& lights,bool additive,float fraction,float cap) {
