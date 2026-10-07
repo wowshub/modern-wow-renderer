@@ -1,0 +1,12 @@
+{
+  "DBFilesClient/Spell.dbc": "38330a2ddca901f9ee2592ad1dc04b6f0793aea1e70d3b4cbe6412bf3b17128b",
+  "DBFilesClient/SpellVisual.dbc": "5317f85be16aa9601212217eed0bd64a2db3dc52311421826ae7280a3d204ee6",
+  "DBFilesClient/SpellVisualEffectName.dbc": "02b4f0cbfb460edc88000b85517a4e93dc5aebeabc75ba3476bf0b139c9673d1",
+  "DBFilesClient/SpellVisualKit.dbc": "b8267ab2d7405d22b687821daf5fc9b39322ce6ebe79a24afc4f047ad713b930",
+  "Spells/cfx_mage_flamestrike.m2": "461eb4eab4845b6d0f8095a057adb82aba98ca3c4ff99964fd0b887ab5947d7e",
+  "Spells/cfx_mage_flamestrike00.skin": "2bb6319aeca8a4d802c7b59332319f477ef9a0e6c23eb7bbe565155d5f9337aa",
+  "Spells/cfx_mage_flamestrikeprojected_castworld.m2": "2201f5aa4ab09608ad281087ea5c2454c8c77703e9dbbaf48a60a7125e951bcf",
+  "Spells/cfx_mage_flamestrikeprojected_castworld00.skin": "4dcd2e73813f794527d5f4f23a95f3405ca0bfb3fc16d851b54a9e61807a5a91",
+  "Spells/cfx_mage_flamestrike_castworld.m2": "8d589b7f55c3fe7f2b2a0baef7d707e40b19bcbf30f2f1fb62a1b2aaf3593f72",
+  "Spells/cfx_mage_flamestrike_castworld00.skin": "af002100b6764af6094772e5bd28cb4451f59577a458c219a6a00c7b8b7c466b"
+}

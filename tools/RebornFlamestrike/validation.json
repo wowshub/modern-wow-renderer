@@ -1,0 +1,29 @@
+{
+  "status": "offline_pass_game_pending",
+  "spell_ids": [
+    2120,
+    2121,
+    8422,
+    8423,
+    10215,
+    10216,
+    27086,
+    42925,
+    42926
+  ],
+  "visual_id": 887992,
+  "effects": {
+    "13043": 813134,
+    "12783": 813135,
+    "12784": 813136
+  },
+  "kit_ids": [
+    824115,
+    824116
+  ],
+  "original_rows_preserved": true,
+  "mpq_readback": true,
+  "vertices_unchanged": true,
+  "skins_unchanged": true,
+  "client_not_modified": true
+}

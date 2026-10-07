@@ -1,0 +1,46 @@
+{
+  "client_mpq输入\\DBFilesClient\\Spell.dbc": {
+    "size": 61592194,
+    "sha256": "eb6ae2c6ac41e7dc9003eec658ab5c0335972782f186a82264605b9c915afc06"
+  },
+  "client_mpq输入\\DBFilesClient\\SpellVisual.dbc": {
+    "size": 1981461,
+    "sha256": "205ad4830d3194024f47161671edc90d289b50a449093fd3005ea1f04870fcb4"
+  },
+  "client_mpq输入\\DBFilesClient\\SpellVisualEffectName.dbc": {
+    "size": 627683,
+    "sha256": "98801f4a338139e3b3f7e912abce413a14ab64c9ceb28122983f93277cdfb31f"
+  },
+  "client_mpq输入\\DBFilesClient\\SpellVisualKit.dbc": {
+    "size": 2302669,
+    "sha256": "b69aa8160840c79a1a119bac1b8f8c582914e6b44cf10738c8426954fecc5601"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrike.m2": {
+    "size": 18648,
+    "sha256": "7bae8751da8b8282c2dcdbd9dc2669e96a1f9941337804d8a11ef87cd20fe6c4"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrike00.skin": {
+    "size": 2336,
+    "sha256": "2bb6319aeca8a4d802c7b59332319f477ef9a0e6c23eb7bbe565155d5f9337aa"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrike_castworld.m2": {
+    "size": 31152,
+    "sha256": "7f7abf2239371ffd57b643196be0cbde5c82de833789c15e7b7ceb1fcc97fcf3"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrike_castworld00.skin": {
+    "size": 6560,
+    "sha256": "af002100b6764af6094772e5bd28cb4451f59577a458c219a6a00c7b8b7c466b"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrikeprojected_castworld.m2": {
+    "size": 11424,
+    "sha256": "8fa06edc5df51f58c04f936c877af909799c646517d80323f77ba51db06057e2"
+  },
+  "client_mpq输入\\Spells\\reborn_light8_cfx_mage_flamestrikeprojected_castworld00.skin": {
+    "size": 288,
+    "sha256": "4dcd2e73813f794527d5f4f23a95f3405ca0bfb3fc16d851b54a9e61807a5a91"
+  },
+  "02_覆盖到客户端根目录\\Data\\patch-ZZ.mpq": {
+    "size": 6259542,
+    "sha256": "bc9e4e3494a403ce2b60e78bb6e72808625ba2ccc735d836b90ffce6dd858452"
+  }
+}

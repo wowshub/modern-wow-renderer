@@ -48,3 +48,7 @@ VOLUMETRIC-PROTOTYPE.md
 MaterialCache/entries/
 MaterialCache/preview/
 !MaterialCache/*.json
+
+# Reproducible accepted client resource recipe
+!tools/RebornFlamestrike/*.py
+!tools/RebornFlamestrike/*.json
