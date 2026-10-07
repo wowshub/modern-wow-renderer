@@ -17,7 +17,9 @@ namespace renderer
         LocalLightNative = 1u << 2,
         LocalLightManifest = 1u << 3,
         LocalLightVolumetric = 1u << 4,
-        LocalLightAttached = 1u << 5
+        LocalLightAttached = 1u << 5,
+        LocalLightPlayer = 1u << 6,
+        LocalLightCreature = 1u << 7
     };
 
     struct LocalLightSource

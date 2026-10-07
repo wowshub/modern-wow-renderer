@@ -11,6 +11,7 @@
 #include "../D3D9/TrackedRenderState.h"
 #include "../Materials/TextureHashLookup.h"
 #include "TorchSignatures.h"
+#include "ActorLightManager.h"
 
 namespace renderer
 {
@@ -35,6 +36,7 @@ namespace renderer
         m_basePath = basePath;
         m_iniPath = basePath + L"GraphicsEffects.ini";
         m_logPath = basePath + L"LocalLighting.log";
+        ActorLightManager::Instance().Configure(basePath);
         ReloadTuning();
         LoadManifest();
         Log("LocalLightManager configured; native D3D9 world-light capture active");
@@ -42,6 +44,7 @@ namespace renderer
 
     void LocalLightManager::ReloadTuning()
     {
+        ActorLightManager::Instance().Reload();
         m_enabled = renderer::locationtuning::ReadInt(L"DynamicLighting", L"Enabled", 1, m_iniPath.c_str()) != 0;
         m_intensityScale = std::clamp(int(renderer::locationtuning::ReadInt(L"DynamicLighting", L"IntensityPercent", 100, m_iniPath.c_str())), 0, 250) * 0.01f;
         m_rayScale = std::clamp(int(renderer::locationtuning::ReadInt(L"DynamicLighting", L"RayPercent", 75, m_iniPath.c_str())), 0, 200) * 0.01f;
@@ -51,6 +54,7 @@ namespace renderer
 
     void LocalLightManager::Reset()
     {
+        ActorLightManager::Instance().Reset();
         m_nativeLights.clear();
         m_attached.clear();
         m_smoothed.clear();
@@ -313,6 +317,12 @@ namespace renderer
         });
         const size_t limit = m_quality == 0 ? 4u : 8u;
         if (candidates.size() > limit) candidates.resize(limit);
+        std::vector<LocalLightSource> actorLights;
+        ActorLightManager::Instance().Append(actorLights);
+        std::erase_if(candidates, [](const LocalLightSource& l){return ActorLightManager::Instance().SuppressNative(l);});
+        // Native lights retain their old budget. Actor bank adds 1 player + <=23 creatures.
+        candidates.insert(candidates.end(),actorLights.begin(),actorLights.end());
+        if(candidates.size()>32)candidates.resize(32);
         m_selected = std::move(candidates);
 
         uint64_t signature = 1469598103934665603ull;

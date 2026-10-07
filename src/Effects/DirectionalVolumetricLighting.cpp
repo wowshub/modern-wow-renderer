@@ -681,8 +681,9 @@ bool DirectionalVolumetricLighting::Render(IDirect3DDevice9* d,const FrameContex
   float c17[4]={0,65.f,0,0};
   float localPosRadius[8][4]{};float localColorPower[8][4]{};
   const auto& localManager=LocalLightManager::Instance();const auto& localLights=localManager.Selected();
-  const int localCount=std::min<int>(8,int(localLights.size()));
-  for(int li=0;li<localCount;++li){localPosRadius[li][0]=localLights[li].position.x;localPosRadius[li][1]=localLights[li].position.y;localPosRadius[li][2]=localLights[li].position.z;localPosRadius[li][3]=localLights[li].radius;localColorPower[li][0]=localLights[li].color.x;localColorPower[li][1]=localLights[li].color.y;localColorPower[li][2]=localLights[li].color.z;localColorPower[li][3]=localLights[li].intensity*localManager.IntensityScale()*f.environment[Lighting]*std::sqrt(std::max(0.f,localManager.RayScale()));}
+  std::vector<LocalLightSource> fogLights;for(const auto& light:localLights)if(light.flags & LocalLightVolumetric)fogLights.push_back(light);
+  const int localCount=std::min<int>(8,int(fogLights.size()));
+  for(int li=0;li<localCount;++li){localPosRadius[li][0]=fogLights[li].position.x;localPosRadius[li][1]=fogLights[li].position.y;localPosRadius[li][2]=fogLights[li].position.z;localPosRadius[li][3]=fogLights[li].radius;localColorPower[li][0]=fogLights[li].color.x;localColorPower[li][1]=fogLights[li].color.y;localColorPower[li][2]=fogLights[li].color.z;localColorPower[li][3]=fogLights[li].intensity*localManager.IntensityScale()*f.environment[Lighting]*std::sqrt(std::max(0.f,localManager.RayScale()));}
   float localDebug[4]={float(localManager.DebugMode()),float(localCount),0,0};
   // Keep the authored distance/height atmosphere and the local bank as
   // independent layers.  Day/night factors only tint the medium; they never

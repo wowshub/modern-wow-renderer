@@ -23,9 +23,9 @@ float4 projection:register(c1); // x=A,y=B,z=P00,w=P11
 float4 inv0:register(c2); float4 inv1:register(c3); float4 inv2:register(c4);
 float4 texel:register(c5);       // xy=full-res texel, z=count, w=occluded count
 float4 tuning:register(c6);      // x=intensity, y=debug
-float4 lightPosRadius[8]:register(c8);
-float4 lightColorPower[8]:register(c16);
-float4 lightDirectionCone[8]:register(c24);
+float4 lightPosRadius[32]:register(c8);
+float4 lightColorPower[32]:register(c40);
+float4 lightDirectionCone[32]:register(c72);
 
 float Linear(float raw) { return projection.y/(raw-projection.x); }
 float3 World(float2 uv,float raw) {
@@ -43,8 +43,8 @@ float4 main(float2 uv:TEXCOORD0):COLOR0 {
  float3 py=abs(Linear(du)-Linear(raw))<abs(Linear(dd)-Linear(raw))?World(uv-float2(0,texel.y),du):World(uv+float2(0,texel.y),dd);
  float3 n=normalize(cross(px-p,py-p));
  float3 toEye=normalize(cameraPos.xyz-p); if(dot(n,toEye)<0)n=-n;
- float3 sum=0,sourceDebug=0; float visibilityDebug=0; int count=(int)texel.z; int occ=(int)texel.w;
- [loop] for(int i=0;i<8;++i) {
+ float3 creatureSum=0; float3 sum=0,sourceDebug=0; float visibilityDebug=0; int count=(int)texel.z; int occ=(int)texel.w;
+ [loop] for(int i=0;i<32;++i) {
   if(i>=count) break;
   float3 toL=lightPosRadius[i].xyz-p; float dist=length(toL); float radius=lightPosRadius[i].w;
   float3 l=toL/max(dist,.001); float edge=saturate(1-dist/max(radius,.01));
@@ -54,10 +54,12 @@ float4 main(float2 uv:TEXCOORD0):COLOR0 {
   float diffuse=saturate(dot(n,l));
   float spec=pow(saturate(dot(reflect(-l,n),toEye)),24)*.055;
   float visibility=1; // Preserve native shadows; no duplicate screen-depth shadows.
-  sum+=lightColorPower[i].rgb*lightColorPower[i].w*(diffuse+spec)*attenuation*visibility;
+  float3 contribution=lightColorPower[i].rgb*lightColorPower[i].w*(diffuse+spec)*attenuation*visibility;
+  if(cone < -1.5) creatureSum+=contribution*saturate(n.z*2); else sum+=contribution;
   sourceDebug+=lightColorPower[i].rgb*lightColorPower[i].w*edge*edge;
   visibilityDebug+=attenuation*(1-visibility);
  }
+ sum+=min(creatureSum,0.12);
  sum*=tuning.x;
  if(tuning.y>.5&&tuning.y<1.5) return float4(sum,Linear(raw));
  if(tuning.y>1.5&&tuning.y<2.5) return float4(sum,Linear(raw));
@@ -227,18 +229,18 @@ bool LocalLightingRenderer::Render(IDirect3DDevice9* device, FrameContext& f)
     device->SetPixelShader(m_surfaceShader.Get()); device->SetTexture(0, f.depthTexture); device->SetTexture(1, f.waterMaskTexture);
     const float camera[4] = { f.cameraPosition.x,f.cameraPosition.y,f.cameraPosition.z,0 };
     const float inv[3][4] = { {f.inverseView.m[0][0],f.inverseView.m[0][1],f.inverseView.m[0][2],0},{f.inverseView.m[1][0],f.inverseView.m[1][1],f.inverseView.m[1][2],0},{f.inverseView.m[2][0],f.inverseView.m[2][1],f.inverseView.m[2][2],0} };
-    const int maxLights = manager.Quality() <= 0 ? 4 : 8;
+    const int maxLights = 32;
     const int count = std::min<int>(maxLights, int(lights.size()));
     const int occluded = std::min(count, manager.Quality() <= 0 ? 2 : 4);
     const float texel[4] = { 1.f / desc.Width,1.f / desc.Height,float(count),float(occluded) };
     const float tuning[4] = { manager.IntensityScale()*f.environment[Lighting],float(manager.DebugMode()),0,0 };
-    float pos[8][4]{}, color[8][4]{}, direction[8][4]{};
+    float pos[32][4]{}, color[32][4]{}, direction[32][4]{};
     for (int i = 0; i < count; ++i)
     {
         pos[i][0] = lights[i].position.x; pos[i][1] = lights[i].position.y; pos[i][2] = lights[i].position.z; pos[i][3] = lights[i].radius;
         color[i][0] = lights[i].color.x; color[i][1] = lights[i].color.y; color[i][2] = lights[i].color.z; color[i][3] = lights[i].intensity;
         direction[i][0] = lights[i].direction.x; direction[i][1] = lights[i].direction.y; direction[i][2] = lights[i].direction.z;
-        direction[i][3] = (lights[i].flags & LocalLightSpot) ? lights[i].outerCone : -1.f;
+        direction[i][3] = (lights[i].flags & LocalLightCreature) ? -2.f : (lights[i].flags & LocalLightSpot) ? lights[i].outerCone : -1.f;
     }
     // This pass samples raw INTZ, unlike atmosphere's normalized boundary.
     // Fold the viewport transform into A/B so both World and Visibility use
@@ -248,7 +250,7 @@ bool LocalLightingRenderer::Render(IDirect3DDevice9* device, FrameContext& f)
         f.projUnpack[1] * depthRange, f.projUnpack[2], f.projUnpack[3] };
     device->SetPixelShaderConstantF(0, camera, 1); device->SetPixelShaderConstantF(1, projection, 1);
     device->SetPixelShaderConstantF(2, inv[0], 3); device->SetPixelShaderConstantF(5, texel, 1); device->SetPixelShaderConstantF(6, tuning, 1);
-    device->SetPixelShaderConstantF(8, pos[0], 8); device->SetPixelShaderConstantF(16, color[0], 8); device->SetPixelShaderConstantF(24, direction[0], 8);
+    device->SetPixelShaderConstantF(8, pos[0], 32); device->SetPixelShaderConstantF(40, color[0], 32); device->SetPixelShaderConstantF(72, direction[0], 32);
     DrawQuad(device, m_lightWidth, m_lightHeight);
     device->SetTexture(0, nullptr); device->SetTexture(1, nullptr);
 
