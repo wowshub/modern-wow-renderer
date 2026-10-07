@@ -39,11 +39,13 @@ void ActorLightManager::Configure(const std::wstring& path){ini=path+L"GraphicsE
  // Also verify the entry bytes: memory patching of these functions invalidates this provider.
  unsigned char bytes[9]{};const unsigned char expected[]={0x55,0x8b,0xec,0x8b,0x89,0xd8,0,0,0};
  supported=supported&&client.Read(0x2e6ef0,bytes,sizeof(bytes))&&std::memcmp(bytes,expected,sizeof(bytes))==0;
- Log("LIGHT1A exe="+client.sha256+(supported?" provider enabled (candidate)":" unsupported; actor lights disabled"));Reload();}
+ Log("LIGHT2A exe="+client.sha256+(supported?" provider enabled (candidate)":" unsupported; actor lights disabled"));Reload();}
 void ActorLightManager::Reload(){
  auto settings=[&](Settings& s,const wchar_t* name,bool isPlayer){s.enabled=Number(ini,name,L"Enabled",1,0,1)!=0;s.radius=Number(ini,name,isPlayer?L"BaseRadius":L"Radius",isPlayer?3.f:1.8f,.2f,40);s.intensity=Number(ini,name,isPlayer?L"BaseIntensity":L"Intensity",isPlayer?.35f:.08f,0,3);s.height=Number(ini,name,L"HeightOffset",.8f,.1f,4);s.color=Color(ini,name,isPlayer?Vec3{1,.72f,.4f}:Vec3{.85f,.75f,.6f});s.day=Number(ini,name,L"OutdoorDayMultiplier",isPlayer?.15f:.05f,0,2);s.night=Number(ini,name,L"OutdoorNightMultiplier",1,0,2);s.interior=Number(ini,name,L"DarkInteriorMultiplier",1,0,2);s.transition=Number(ini,name,L"TransitionSeconds",.8f,.05f,10);};
  settings(player,L"PlayerLight",true);settings(creature,L"CreatureLight",false);
  distance=Number(ini,L"CreatureLight",L"MaxDistance",35,1,100);maxLights=int(Number(ini,L"CreatureLight",L"MaxActiveLights",16,0,23));fadeDeath=Number(ini,L"CreatureLight",L"FadeOnDeath",1,0,1)!=0;deathSeconds=Number(ini,L"CreatureLight",L"DeathFadeSeconds",.8f,.05f,5);
+ auto mode=Text(ini,L"PlayerLight",L"EquipmentMode",L"Strongest");additiveEquipment=_wcsicmp(mode.c_str(),L"Additive")==0;
+ additionalRadiusFactor=Number(ini,L"PlayerLight",L"AdditionalRadiusFactor",.5f,0,1);maxEquipmentRadius=Number(ini,L"PlayerLight",L"MaxEquipmentRadius",40,.2f,40);
  forceProfile=Text(ini,L"PlayerLight",L"TestProfile");daylightOverride=Number(ini,L"PlayerLight",L"TestDaylight",-1,-1,1);interiorOverride=int(Number(ini,L"PlayerLight",L"TestIndoors",-1,-1,1));
  profiles.clear();items.clear();areaOverrides.clear();std::vector<wchar_t> names(32768);GetPrivateProfileSectionNamesW(names.data(),DWORD(names.size()),ini.c_str());
  for(const wchar_t* n=names.data();*n;n+=wcslen(n)+1){std::wstring name=n;if(name.rfind(L"LightProfile.",0)!=0)continue;Profile p;p.radius=Number(ini,n,L"Radius",8,.2f,40);p.intensity=Number(ini,n,L"Intensity",1.1f,0,3);p.color=Color(ini,n,p.color);p.flicker=Number(ini,n,L"FlickerAmount",0,0,.2f);profiles[name.substr(13)]=p;}
@@ -81,7 +83,11 @@ void ActorLightManager::Append(std::vector<LocalLightSource>& lights){
  if(!valid){states.clear();equipmentActive=false;intensity=0;if(now-lastLog>5000){lastLog=now;Log("No valid in-world player snapshot; actor lights skipped");}return;}
  const auto& frame=FrameContext::Current();float daylight=daylightOverride>=0?daylightOverride:frame.daylightFactor;
  Profile target;target.radius=player.radius;target.intensity=player.intensity;target.color=player.color;bool equipped=false;
- float strongest=-1;for(uint32_t id:equipment){auto m=items.find(id);if(m==items.end())continue;auto p=profiles.find(m->second);if(p==profiles.end())continue;float score=actorlight::Strength(p->second.radius,p->second.intensity);if(score>strongest){strongest=score;target=p->second;equipped=true;}}
+ std::vector<Profile> equippedProfiles;std::vector<actorlight::EquipmentLight> powers;
+ for(uint32_t id:equipment){auto m=items.find(id);if(m==items.end())continue;auto p=profiles.find(m->second);if(p==profiles.end())continue;equippedProfiles.push_back(p->second);powers.push_back({p->second.radius,p->second.intensity});}
+ auto combined=actorlight::Combine(powers,additiveEquipment,additionalRadiusFactor,maxEquipmentRadius);
+ if(combined.count){target=equippedProfiles[combined.strongest];target.radius=combined.radius;equipped=true;}
+
  if(auto f=profiles.find(forceProfile);f!=profiles.end()){target=f->second;equipped=true;}
  equipmentActive=equipped&&player.enabled;
  radius=actorlight::Blend(radius,target.radius,dt,player.transition);intensity=actorlight::Blend(intensity,self.alive?target.intensity:0.f,dt,player.transition);color=color+(target.color-color)*(1-std::exp(-dt/player.transition));environment=actorlight::Blend(environment,actorlight::Environment(daylight,indoor,player.day,player.night,player.interior),dt,player.transition);
@@ -91,6 +97,6 @@ void ActorLightManager::Append(std::vector<LocalLightSource>& lights){
   for(auto it=states.begin();it!=states.end();){auto& st=it->second;float age=float(now-st.seen)*.001f;if(age>deathSeconds||(!fadeDeath&&age>0)||Length(st.light.position-self.pos)>distance+2){it=states.erase(it);continue;}auto l=st.light;l.intensity=creature.intensity*env*(fadeDeath?std::clamp(1-age/deathSeconds,0.f,1.f):1.f);l.score=1.f/(1.f+Length(l.position-frame.cameraPosition));if(l.intensity>.0001f&&InView(l.position,l.radius))nearest.push_back(l);++it;}
   std::sort(nearest.begin(),nearest.end(),[](const auto& a,const auto& b){return a.score>b.score;});if(nearest.size()>size_t(maxLights))nearest.resize(maxLights);lights.insert(lights.end(),nearest.begin(),nearest.end());
  }else states.clear();
- if(now-lastLog>5000){lastLog=now;std::ostringstream o;o<<"valid player="<<self.guid<<" pos="<<self.pos.x<<","<<self.pos.y<<","<<self.pos.z<<" indoors="<<indoor<<" daylight="<<daylight<<" radius="<<radius<<" intensity="<<intensity*environment<<" creatures="<<actors.size()<<" equipped="<<equipped<<" itemIDs=";for(auto id:equipment)if(id)o<<id<<",";Log(o.str());}
+ if(now-lastLog>5000){lastLog=now;std::ostringstream o;o<<"valid player="<<self.guid<<" pos="<<self.pos.x<<","<<self.pos.y<<","<<self.pos.z<<" indoors="<<indoor<<" daylight="<<daylight<<" radius="<<radius<<" intensity="<<intensity*environment<<" creatures="<<actors.size()<<" equipped="<<equipped<<" equipmentCount="<<combined.count<<" mode="<<(additiveEquipment?"Additive":"Strongest")<<" targetRadius="<<target.radius<<" itemIDs=";for(auto id:equipment)if(id)o<<id<<",";Log(o.str());}
 }
 }

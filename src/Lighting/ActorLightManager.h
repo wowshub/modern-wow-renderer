@@ -21,6 +21,7 @@ private:
  std::map<std::wstring,Profile> profiles;std::map<uint32_t,std::wstring> items;std::map<uint32_t,bool> areaOverrides;
  std::map<uint64_t,State> states;std::vector<Actor> actors;Actor self;uint64_t sessionGuid=0;uint32_t mapId=0;
  std::wstring forceProfile;std::array<uint32_t,19> equipment{};
+ bool additiveEquipment=false;float additionalRadiusFactor=.5f,maxEquipmentRadius=40;
  float distance=35,deathSeconds=.8f,daylightOverride=-1;int maxLights=16,interiorOverride=-1;ULONGLONG sampled=0,last=0,lastLog=0;
  float radius=3,intensity=0,environment=1;Vec3 color{1,.72f,.4f};
  void Sample();void Log(const std::string& value);
